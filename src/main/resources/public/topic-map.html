@@ -1,0 +1,36 @@
+<!-- import latest release version of all components from polygit -->
+<link rel="import" href="https://polygit.org/components/polymer/polymer.html">
+
+<dom-module id="topic-map">
+  <template>
+    <h3>Topic Maps</h3>
+    
+    <div>[[map]]</div>
+    <button on-tap="onLogin">Login</button>
+  </template>
+  
+  <script>
+    Polymer({
+      is: "topic-map",
+  	  properties: {
+	    map: {
+	        type: String,
+	        value: "Please login"
+	    }
+	  },
+	  created: function() {
+	  },
+	  onLogin: function() {
+	    var self = this;
+	    $.ajax({
+	        type: "GET",
+	        url: "http://localhost:8080/topicmap?user=frederic",
+	        dataType: "json",
+	        contentType: "application/json",
+	    }).then(function(data) {
+	       self.map = JSON.stringify(data);
+	    });	    	        
+	  }
+    });
+  </script>
+</dom-module>
