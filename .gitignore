@@ -1,4 +1,5 @@
 /target/
+/hg-storage/
 .classpath
 .project
 .settings
