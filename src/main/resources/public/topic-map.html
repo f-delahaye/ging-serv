@@ -1,36 +1,48 @@
-<!-- import latest release version of all components from polygit -->
-<link rel="import" href="https://polygit.org/components/polymer/polymer.html">
+<!-- import latest release v
+ersion of all components from polygit -->
+<link rel="import"
+	href="https://polygit.org/components/polymer/polymer.html">
 
-<dom-module id="topic-map">
-  <template>
-    <h3>Topic Maps</h3>
-    
-    <div>[[map]]</div>
-    <button on-tap="onLogin">Login</button>
-  </template>
-  
-  <script>
+<dom-module id="topic-map"> 
+<template>
+	<style>
+	   #map {
+	        width: 250px;
+	        height: 80px;
+	    }
+	</style>
+	<h3>Topic Maps</h3>
+	
+	<div id="map"></div>
+	<button on-tap="onLogin">Login</button>
+</template> 
+
+<script>
     Polymer({
       is: "topic-map",
-  	  properties: {
-	    map: {
-	        type: String,
-	        value: "Please login"
-	    }
-	  },
-	  created: function() {
-	  },
 	  onLogin: function() {
-	    var self = this;
 	    $.ajax({
 	        type: "GET",
 	        url: "http://localhost:8080/topicmap?user=frederic",
 	        dataType: "json",
 	        contentType: "application/json",
 	    }).then(function(data) {
-	       self.map = JSON.stringify(data);
+			var cy = cytoscape({container: document.getElementById('map')});
+			for (var i = 0; i<data.topics.length; i++) {
+				cy.add({data: {id: 't'+i}})
+			};
+/* 	        cy.add({
+	             data: {
+	               id: 'link',
+	               source: 't0',
+	               target: 't1'
+	             }
+	        }); */
+ 			cy.layout({
+			    name: 'circle'
+			}); 
 	    });	    	        
 	  }
     });
-  </script>
+  </script> 
 </dom-module>
