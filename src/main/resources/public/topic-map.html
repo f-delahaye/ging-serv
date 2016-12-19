@@ -1,32 +1,27 @@
-<!-- import latest release v
-ersion of all components from polygit -->
+<!-- import latest release version of all components from polygit -->
 <link rel="import"
 	href="https://polygit.org/components/polymer/polymer.html">
 
 <dom-module id="topic-map"> 
 <template>
-	<style>
-	   #map {
-	        width: 250px;
-	        height: 80px;
-	    }
-	</style>
 	<h3>Topic Maps</h3>
 	
-	<div id="map"></div>
+	<div id="map" style="width:{{width}};height:{{height}}"></div>
 	<button on-tap="onLogin">Login</button>
+	<input value="{{newTopicName::input}}">
+	<button on-tap="onTopicCreated">New Topic</button>
 </template> 
 
 <script>
     Polymer({
       is: "topic-map",
-	  onLogin: function() {
-	    $.ajax({
-	        type: "GET",
-	        url: "http://localhost:8080/topicmap?user=frederic",
-	        dataType: "json",
-	        contentType: "application/json",
-	    }).then(function(data) {
+      properties: {
+    	  url: String,
+    	  width: String,
+    	  height: String,
+    	  newTopicName: String,
+      },
+      onTopicMapLoaded: function(data) {
 			var cy = cytoscape({container: document.getElementById('map')});
 			for (var i = 0; i<data.topics.length; i++) {
 				cy.add({data: {id: 't'+i}})
@@ -41,7 +36,26 @@ ersion of all components from polygit -->
  			cy.layout({
 			    name: 'circle'
 			}); 
-	    });	    	        
+      },
+	  onLogin: function() {
+		var self = this;
+	    $.ajax({
+	        type: "GET",
+	        url: self.url+"?user=frederic",
+	        dataType: "json",
+	        contentType: "application/json",
+	    }).then(this.onTopicMapLoaded);	    	        
+	  },
+	  onTopicCreated: function() {
+		var self = this;
+		var newTopicMap = {"topics":[{"item.identifiers":[""+this.newTopicName+""]}],"locator":"frederic"};
+		$.ajax({
+	        type: "POST",
+	        url: self.url+"?user=frederic",
+	        dataType: "json",
+	        contentType: "application/json",
+	        data: JSON.stringify(newTopicMap),
+	    }).then(this.onTopicMapLoaded);	    	        
 	  }
     });
   </script> 
