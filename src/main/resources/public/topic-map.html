@@ -10,9 +10,11 @@
 	<button on-tap="onLogin">Login</button>
 	<input value="{{newTopicName::input}}">
 	<button on-tap="onTopicCreated">New Topic</button>
+	<button on-tap="onLinkCreated">Link selected</button>
 </template> 
 
 <script>
+    var cy;
     Polymer({
       is: "topic-map",
       properties: {
@@ -22,19 +24,51 @@
     	  newTopicName: String,
       },
       onTopicMapLoaded: function(data) {
-			var cy = cytoscape({container: document.getElementById('map')});
-			for (var i = 0; i<data.topics.length; i++) {
-				cy.add({data: {id: 't'+i}})
-			};
-/* 	        cy.add({
-	             data: {
-	               id: 'link',
-	               source: 't0',
-	               target: 't1'
-	             }
-	        }); */
+			cy = cytoscape({
+					container: document.getElementById('map'),
+					style: cytoscape.stylesheet()
+				    .selector('node').css({
+				        'background-color': function( ele ){ return ele.data('topic')?'red':'black' },
+				        label: 'data(name)',
+				        'font-size': 8,
+				      })
+				    .selector('edge').css({
+				         'width': 2,
+				         'line-color': 'black'
+				      })
+				    .selector('node:selected').css({
+				    	'background-color': function( ele ){ return ele.data('topic')?'yellow':'black' },
+				    })
+				});
+			var topics = data.topics;
+			topics.forEach(function(topic) {
+				cy.add({data: {
+					id: topic.id, 
+					topic: topic,
+					name: topic.itemIdentifiers[0]
+				}});
+			});
+			//cy.add(topics);
+//			cy.add(topics.map(function(topic) {return {data : {id: getTopicId, topic: topic}}}));
+			
+			if (data.associations) {
+				data.associations.forEach(function(association) {
+					cy.add({data: {
+						id: association.id,
+					}});
+					
+					association.roles.forEach(function(role) {
+						cy.add({
+			             data: {
+			               id: role.id,
+			               source: association.id,
+			               target: role.playerId
+			             }}); 
+					});
+				});
+			}
  			cy.layout({
-			    name: 'circle'
+			    name: 'circle',
 			}); 
       },
 	  onLogin: function() {
@@ -46,16 +80,34 @@
 	        contentType: "application/json",
 	    }).then(this.onTopicMapLoaded);	    	        
 	  },
-	  onTopicCreated: function() {
+	  postTopicMap: function(topicMap) {
 		var self = this;
-		var newTopicMap = {"topics":[{"item.identifiers":[""+this.newTopicName+""]}],"locator":"frederic"};
 		$.ajax({
 	        type: "POST",
-	        url: self.url+"?user=frederic",
+	        url: self.url,
 	        dataType: "json",
 	        contentType: "application/json",
-	        data: JSON.stringify(newTopicMap),
-	    }).then(this.onTopicMapLoaded);	    	        
+	        data: JSON.stringify(topicMap),
+	    }).then(this.onTopicMapLoaded);	    	        		  
+	  },
+	  onTopicCreated: function() {
+		var newTopicMap = {"topics":[{"itemIdentifiers":[""+this.newTopicName+""]}],"locator":"frederic"};
+		this.postTopicMap(newTopicMap);
+	  },
+	  onLinkCreated: function() {
+		  var self = this;
+		  var topics = cy.$(':selected').map(function (node) {
+			 return node.data('topic'); 
+		  });
+		  var roles = topics.map(function(topic) {
+			  return {"playerId": topic.id, "typeId": topic.id};
+		  });
+		  // !!!! FIXME
+		  // Type of the association and roles is hard coded so that server doesnt throw an exception.
+		  // !!!! FIXME
+		  var newTopicMap = {"topics": topics, "associations": [{"typeId": topics[0].id, "roles": roles}], "locator":"frederic"};
+		  console.log(newTopicMap);
+		  this.postTopicMap(newTopicMap);
 	  }
     });
   </script> 
